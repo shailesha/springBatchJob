@@ -8,9 +8,11 @@ import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 
 import java.util.Set;
 
@@ -19,11 +21,20 @@ public class SpringBatchJobApplication implements CommandLineRunner{
 
 
 	private static final Logger log = LoggerFactory.getLogger(SpringBatchJobApplication.class);
+
+
+	@Autowired
+	private ApplicationContext applicationContext;
+
 	@Autowired
 	JobExplorer jobExplorer;
 
 	@Autowired
 	JobOperator jobOperator;
+
+	@Autowired
+	@Qualifier("asyncJobLauncher")
+	JobLauncher asyncJobLauncher;
 
 	//@Autowired
 	//Job job;
@@ -46,11 +57,20 @@ public class SpringBatchJobApplication implements CommandLineRunner{
 				if(exec.getStatus().equals(BatchStatus.STARTED)) {
 					jobOperator.stop(exec.getId());
 					jobOperator.abandon(exec.getId());
-					// we can automatically restart it also afresh if there is no job dependency problem
+					// we can automatically restart it also afresh if there is no job dependency problem - same dependencies as in job controller would apply
 					// we can also pass in job parameters indicating that it was started due to pod crash
 
+					JobParametersBuilder jobParametersBuilder = new JobParametersBuilder(exec.getJobParameters());
+					jobParametersBuilder.addString("trigger", "app Start After pod Crash. abandoned execution id:" + exec.getId());
+					Job job = null;
+					if(exec.getJobInstance().getJobName().equals("taskletJob")) {
+						job = (Job)applicationContext.getBean("taskletJob");
+					} else {
+						job = (Job)applicationContext.getBean("printlnJob");
+					}
+					asyncJobLauncher.run(job,jobParametersBuilder.toJobParameters());
 
-					jobOperator.start(exec.getJobInstance().getJobName(), "trigger=appStartAfterpodCrashed,time="+System.currentTimeMillis());
+
 				}
 			}
 			// we could send out a mail to operations on all jobs which were abandoned here.
