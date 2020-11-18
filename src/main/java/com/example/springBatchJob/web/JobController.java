@@ -36,9 +36,11 @@ public class JobController {
     JobOperator jobOperator;
 
     @Autowired
+    @Qualifier("importUserJob")
     Job importUserJob;
 
     @Autowired
+    @Qualifier("printlnJob")
     Job printlnJob;
 
     @Autowired
@@ -92,19 +94,56 @@ public class JobController {
             jobParameters =  jobParametersBuilder.addString("endOfDayPosting", "Y")
                     .toJobParameters();
 
+                Set<JobExecution> jobExecutionSet = jobExplorer.findRunningJobExecutions("printlnJob");
+                if(jobExecutionSet.size() > 0) {
+                    for(JobExecution exec : jobExecutionSet) {
+                        log.info("exit status printlnjob : job instance id " + exec.getJobInstance() + ":" + exec.getExitStatus());
+                        log.info("exit status printlnjob : job instance id " + exec.getJobInstance() + ":" + ExitStatus.UNKNOWN);
+                        log.info( "compare the two exitstatus" + exec.getExitStatus().equals(ExitStatus.UNKNOWN));
+                        if(exec.getStatus().equals(BatchStatus.STARTED)) {
+                            jobOperator.stop(exec.getId());
+                            jobOperator.abandon(exec.getId());
+                        }
+                    }
+                }
+
+
 
               if(jobExplorer.findRunningJobExecutions("taskletJob").size() == 0 ) {
                 log.info("No existing job running ");
 
-                jobExecution = jobLauncher.run(taskletJob, jobParameters);
+                jobExecution = asyncJobLauncher.run(taskletJob, jobParameters);
               } else {
                   Set<JobExecution> jobExecutions = jobExplorer.findRunningJobExecutions("taskletJob");
                   for(JobExecution exec : jobExecutions) {
                       log.info("exit status : job instance id " + exec.getJobInstance() + ":" + exec.getExitStatus()+ ":" + exec.getStatus());
+                      if(exec.getStatus().equals(BatchStatus.STARTED)) {
+                          jobOperator.stop(exec.getId());
+                          jobOperator.abandon(exec.getId());
+                      }
                   }
                   log.info("Batch job is already running ");
                   return "Batch job is already running ";
-
+                /*Set<JobExecution> jobExecutions = jobExplorer.findRunningJobExecutions("taskletJob");
+                for(JobExecution exec : jobExecutions) {
+                    log.info("exit status : job instance id " + exec.getJobInstance() + ":" +  exec.getExitStatus());
+                    if(exec.getExitStatus().equals(ExitStatus.EXECUTING)) {
+                        log.info("Batch job is already running ");
+                        return "Batch job is already running ";
+                    } else if ( exec.getExitStatus().equals(ExitStatus.FAILED)
+                            || exec.getExitStatus().equals(ExitStatus.STOPPED)
+                            || exec.getExitStatus().equals(ExitStatus.UNKNOWN)
+                    ){
+                        Long instanceIdToResume = exec.getJobInstance().getInstanceId();
+                        Long restartId = jobOperator.restart(instanceIdToResume);
+                        log.info("Batch job id " + instanceIdToResume + " has been restarted with restart id as  " + restartId);
+                        return "Batch job id " + instanceIdToResume + " has been restarted with restart id as  " + restartId;
+                    }  else {
+                        log.info("Batch job status " + exec.getExitStatus());
+                    }
+                }
+                log.info("no other jobs running. a new job is being submitted");
+                jobExecution = jobLauncher.run(taskletJob, jobParameters);*/
 
 
             }

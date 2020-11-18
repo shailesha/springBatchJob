@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SpringBatchJobApplication {
 
 	//@Autowired
-	//JobLauncher jobLauncher;
+	JobLauncher jobLauncher;
 
 	//@Autowired
 	//Job job;
@@ -24,11 +24,11 @@ public class SpringBatchJobApplication {
 	}
 
 	//@Override
-	/*public void run(String... args) throws Exception
+	public void run(String... args) throws Exception
 	{
 		JobParameters params = new JobParametersBuilder()
 				.addString("JobID", String.valueOf(System.currentTimeMillis()))
 				.toJobParameters();
 		jobLauncher.run(job, params);
-	}*/
+	}
 }
