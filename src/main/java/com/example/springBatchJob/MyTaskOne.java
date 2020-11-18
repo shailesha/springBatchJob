@@ -22,7 +22,7 @@ public class MyTaskOne implements Tasklet {
     {
         log.info("MyTaskOne start..");
 
-        //getting passed in job parameters, job instance id
+        //getting passed in job parameters and job instance id
         Map<String,Object> jobParameters = chunkContext.getStepContext().getJobParameters();
         Long jobInstanceId = chunkContext.getStepContext().getJobInstanceId();
 

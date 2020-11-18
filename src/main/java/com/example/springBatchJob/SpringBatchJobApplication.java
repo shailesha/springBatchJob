@@ -46,6 +46,11 @@ public class SpringBatchJobApplication implements CommandLineRunner{
 				if(exec.getStatus().equals(BatchStatus.STARTED)) {
 					jobOperator.stop(exec.getId());
 					jobOperator.abandon(exec.getId());
+					// we can automatically restart it also afresh if there is no job dependency problem
+					// we can also pass in job parameters indicating that it was started due to pod crash
+
+
+					jobOperator.start(exec.getJobInstance().getJobName(), "trigger=appStartAfterpodCrashed,time="+System.currentTimeMillis());
 				}
 			}
 			// we could send out a mail to operations on all jobs which were abandoned here.
