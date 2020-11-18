@@ -32,5 +32,7 @@ public class JobCompletionNotificationListener extends JobExecutionListenerSuppo
                             rs.getString(2))
             ).forEach(person -> log.info("Found <" + person + "> in the database."));
         }
+
+        // can be used to send out mails if the job fails
     }
 }

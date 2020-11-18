@@ -12,6 +12,8 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.core.io.ClassPathResource;
 
+import java.util.Map;
+
 public class MyTaskOne implements Tasklet {
 
     private static final Logger log = LoggerFactory.getLogger(MyTaskOne.class);
@@ -19,6 +21,11 @@ public class MyTaskOne implements Tasklet {
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception
     {
         log.info("MyTaskOne start..");
+
+        //getting passed in job parameters, job instance id
+        Map<String,Object> jobParameters = chunkContext.getStepContext().getJobParameters();
+        Long jobInstanceId = chunkContext.getStepContext().getJobInstanceId();
+
         FlatFileItemReader<Person> flatFileItemReader = new FlatFileItemReaderBuilder<Person>()
                 .name("personItemReader")
                 .resource(new ClassPathResource("sampledata.csv"))

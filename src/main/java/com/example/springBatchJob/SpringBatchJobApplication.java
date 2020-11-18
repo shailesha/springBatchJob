@@ -50,7 +50,7 @@ public class SpringBatchJobApplication implements CommandLineRunner{
 			}
 			// we could send out a mail to operations on all jobs which were abandoned here.
 
-			// also explore listeners in the batch api  for sending mail if job fails due to an exception
+
 		}
 
 	}
