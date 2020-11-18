@@ -64,29 +64,24 @@ public class JobController {
             jobParameters =  jobParametersBuilder.addString("endOfDayPosting", "Y")
                     .toJobParameters();
 
+            // no two println jobs should run together
             if(jobExplorer.findRunningJobExecutions("printlnJob").size() == 0 ) {
-                log.info("No existing job running ");
-                jobExecution = asyncJobLauncher.run(printlnJob, jobParameters);
-            } else {
-                Set<JobExecution> jobExecutions = jobExplorer.findRunningJobExecutions("printlnJob");
-                for(JobExecution exec : jobExecutions) {
-                    if(exec.getExitStatus().equals(ExitStatus.EXECUTING)) {
-                        log.info("Batch job is already running ");
-                        return "Batch job is already running ";
-                    } else if ( exec.getExitStatus().equals(ExitStatus.FAILED)
-                            || exec.getExitStatus().equals(ExitStatus.STOPPED)
-                            || exec.getExitStatus().equals(ExitStatus.UNKNOWN)
-                    ){
-                        Long instanceIdToResume = exec.getJobInstance().getInstanceId();
-                        Long restartId = jobOperator.restart(instanceIdToResume);
-                        log.info("Batch job id " + instanceIdToResume + " has been restarted with restart id as  " + restartId);
-                        return "Batch job id " + instanceIdToResume + " has been restarted with restart id as  " + restartId;
-                    }  else {
-                        log.info("Batch job status " + exec.getExitStatus());
-                    }
+                log.info("No existing println job running ");
+
+                //if tasklet job is running, then also println job should not be running
+                if(jobExplorer.findRunningJobExecutions("taskletJob").size() == 0 ) {
+                    jobExecution = asyncJobLauncher.run(printlnJob, jobParameters);
+                } else {
+                    log.info("tasklet job running ");
+                    return "tasklet job running";
                 }
-                log.info("no other jobs running. a new job is being submitted");
-                jobExecution = asyncJobLauncher.run(printlnJob, jobParameters);
+            } else {
+                Set<JobExecution> jobExecutions = jobExplorer.findRunningJobExecutions("taskletJob");
+                for(JobExecution exec : jobExecutions) {
+                    log.info("exit status : job instance id " + exec.getJobInstance() + ":" + exec.getExitStatus()+ ":" + exec.getStatus());
+                }
+                log.info("println  job is already running ");
+                return "println Batch job is already running ";
 
 
             }
@@ -94,56 +89,29 @@ public class JobController {
             jobParameters =  jobParametersBuilder.addString("endOfDayPosting", "Y")
                     .toJobParameters();
 
-                Set<JobExecution> jobExecutionSet = jobExplorer.findRunningJobExecutions("printlnJob");
-                if(jobExecutionSet.size() > 0) {
-                    for(JobExecution exec : jobExecutionSet) {
-                        log.info("exit status printlnjob : job instance id " + exec.getJobInstance() + ":" + exec.getExitStatus());
-                        log.info("exit status printlnjob : job instance id " + exec.getJobInstance() + ":" + ExitStatus.UNKNOWN);
-                        log.info( "compare the two exitstatus" + exec.getExitStatus().equals(ExitStatus.UNKNOWN));
-                        if(exec.getStatus().equals(BatchStatus.STARTED)) {
-                            jobOperator.stop(exec.getId());
-                            jobOperator.abandon(exec.getId());
-                        }
-                    }
-                }
+
 
 
 
               if(jobExplorer.findRunningJobExecutions("taskletJob").size() == 0 ) {
                 log.info("No existing job running ");
 
-                jobExecution = asyncJobLauncher.run(taskletJob, jobParameters);
+                  if(jobExplorer.findRunningJobExecutions("printlnJob").size() == 0 ) {
+                      jobExecution = asyncJobLauncher.run(taskletJob, jobParameters);
+                  } else {
+                      log.info("println job running ");
+                      return "println job running";
+                  }
+
               } else {
                   Set<JobExecution> jobExecutions = jobExplorer.findRunningJobExecutions("taskletJob");
                   for(JobExecution exec : jobExecutions) {
                       log.info("exit status : job instance id " + exec.getJobInstance() + ":" + exec.getExitStatus()+ ":" + exec.getStatus());
-                      if(exec.getStatus().equals(BatchStatus.STARTED)) {
-                          jobOperator.stop(exec.getId());
-                          jobOperator.abandon(exec.getId());
-                      }
+
                   }
-                  log.info("Batch job is already running ");
-                  return "Batch job is already running ";
-                /*Set<JobExecution> jobExecutions = jobExplorer.findRunningJobExecutions("taskletJob");
-                for(JobExecution exec : jobExecutions) {
-                    log.info("exit status : job instance id " + exec.getJobInstance() + ":" +  exec.getExitStatus());
-                    if(exec.getExitStatus().equals(ExitStatus.EXECUTING)) {
-                        log.info("Batch job is already running ");
-                        return "Batch job is already running ";
-                    } else if ( exec.getExitStatus().equals(ExitStatus.FAILED)
-                            || exec.getExitStatus().equals(ExitStatus.STOPPED)
-                            || exec.getExitStatus().equals(ExitStatus.UNKNOWN)
-                    ){
-                        Long instanceIdToResume = exec.getJobInstance().getInstanceId();
-                        Long restartId = jobOperator.restart(instanceIdToResume);
-                        log.info("Batch job id " + instanceIdToResume + " has been restarted with restart id as  " + restartId);
-                        return "Batch job id " + instanceIdToResume + " has been restarted with restart id as  " + restartId;
-                    }  else {
-                        log.info("Batch job status " + exec.getExitStatus());
-                    }
-                }
-                log.info("no other jobs running. a new job is being submitted");
-                jobExecution = jobLauncher.run(taskletJob, jobParameters);*/
+                  log.info("tasklet Batch job is already running ");
+                  return "tasklet Batch job is already running ";
+
 
 
             }
