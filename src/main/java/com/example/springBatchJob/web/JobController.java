@@ -1,5 +1,6 @@
 package com.example.springBatchJob.web;
 
+import com.example.springBatchJob.JobStopSignalRepository;
 import com.example.springBatchJob.PersonItemProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -47,7 +49,42 @@ public class JobController {
    // @Qualifier("taskletJob")
     Job taskletJob;
 
+    @PostMapping("/killjob")
+    @ResponseBody
+    public String killJob(@RequestParam(name = "name") String jobName) throws Exception {
+        if (jobName.equals("taskletJob")) {
+            Set<JobExecution> jobExecutions = jobExplorer.findRunningJobExecutions("taskletJob");
+            for(JobExecution exec : jobExecutions) {
+                log.info("exit status : job instance id " + exec.getJobInstance() + ":" + exec.getExitStatus()+ ":" + exec.getStatus());
+                if(exec.getStatus().equals(BatchStatus.STARTED)) {
 
+
+                    Collection<StepExecution> stepExecutions = exec.getStepExecutions();
+                    for(StepExecution stepExec : stepExecutions) {
+                        log.info("step execution id : " + stepExec.getId() + " is being marked as terminated");
+                        stepExec.setTerminateOnly();
+                    }
+                    //log.info("exec.id in controller = " + exec.getId());
+
+                    //if the job instance is singleton, this hack could work
+                    JobStopSignalRepository.signalStopToJobExecution(exec);
+                    //Thread.sleep(2000);
+                   // if(jobOperator.stop(exec.getId())) {
+                     //   Thread.sleep(1000);
+                    //}
+
+                   /* if(jobOperator.stop(exec.getId())) {
+                        Thread.sleep(2000);
+                    } else {
+                        log.info("job not stopping");
+                    }*/
+                    //jobOperator.abandon(exec.getId());
+                    //log.info("job instance id = " + exec.getJobInstance().getId() + " killed");
+                }
+            }
+        }
+        return "done";
+    }
     @PostMapping("/invokejob")
     @ResponseBody
     public String invokeJob(@RequestParam(name = "name") String jobName) throws Exception {

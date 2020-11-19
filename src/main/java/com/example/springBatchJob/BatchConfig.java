@@ -50,9 +50,10 @@ public class BatchConfig {
 
 
     @Bean
-    public Step stepOne(){
+    public Step stepOne(TaskOneStepExecutionListener listener1){
         return steps.get("stepOne")
                 .tasklet(new MyTaskOne())
+                .listener(listener1)
                 .startLimit(3)
                 .build();
     }
@@ -65,11 +66,14 @@ public class BatchConfig {
     }*/
 
     @Bean
-    public Job taskletJob(){
+    public Job taskletJob(TaskOneStepExecutionListener listener1){
         return jobBuilderFactory.get("taskletJob")
                 .incrementer(new RunIdIncrementer())
-                .start(stepOne())
-                //.next(stepTwo())
+                .start(stepOne(listener1))
+                //on("STOPPED").end("FAILED")
+               // .on("*").end()
+               //.next(stepTwo())
+                //.end()
                 .build();
     }
 

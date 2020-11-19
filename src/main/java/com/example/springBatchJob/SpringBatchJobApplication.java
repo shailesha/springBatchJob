@@ -47,6 +47,7 @@ public class SpringBatchJobApplication implements CommandLineRunner{
 	@Override
 	public void run(String... args) throws Exception
 	{
+//		//if the job instance is singleton, this  could work to close orphan jobs and restart
 		Set<JobExecution> jobExecutionSet = jobExplorer.findRunningJobExecutions("printlnJob");
 		jobExecutionSet.addAll(jobExplorer.findRunningJobExecutions("taskletJob"));
 		if(jobExecutionSet.size() > 0) {
@@ -71,6 +72,8 @@ public class SpringBatchJobApplication implements CommandLineRunner{
 					asyncJobLauncher.run(job,jobParametersBuilder.toJobParameters());
 
 
+				} else if(exec.getStatus().equals(BatchStatus.STOPPING) ){
+					jobOperator.abandon(exec.getId());
 				}
 			}
 			// we could send out a mail to operations on all jobs which were abandoned here.
